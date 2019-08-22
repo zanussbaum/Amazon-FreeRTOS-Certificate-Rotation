@@ -1,0 +1,520 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Iot Certificate Rotation CloudFormation Template",
+    "Parameters": {
+        "AttachName": {
+            "Description": "Name of attach rule",
+            "Type": "String",
+            "Default": "attachRule"
+        },
+        "ActivateName": {
+            "Description": "Name of activate rule",
+            "Type": "String",
+            "Default": "activateRule"
+        },
+        "DetachName": {
+            "Description": "Name of detach rule",
+            "Type": "String",
+            "Default": "detachRule"
+        },
+        "RoleName": {
+            "Description": "Name of rotate role",
+            "Type": "String",
+            "Default": "rotateRole"
+        },
+        "AttachFnName": {
+            "Description": "Name of your attach function",
+            "Type": "String"
+        },
+        "ActivateFnName": {
+            "Description": "Name of your activate function",
+            "Type": "String"
+        },
+        "DetachFnName": {
+            "Description": "Name of your detach function",
+            "Type": "String"
+        },
+        "S3BucketName": {
+            "Description": "Name of your S3 bucket",
+            "Type": "String"
+        },
+        "attachFnZip": {
+            "Description": "Name of the zip file for the attach function",
+            "Type": "String"
+        },
+        "activateFnZip": {
+            "Description": "Name of the zip file for the activate function",
+            "Type": "String"
+        },
+        "detachFnZip": {
+            "Description": "Name of the zip file for the detach function",
+            "Type": "String"
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Designer": {
+            "d8567df0-6cc3-4bd2-ae9e-f0d8e56cdf40": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 270,
+                    "y": 60
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "e466f55d-1afe-43a6-9073-167ae9bf4256": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 270,
+                    "y": 150
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "f380b75e-48c7-4fb7-b82b-467c154a5cdf": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 270,
+                    "y": 240
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "4857fd22-1b72-4dec-83e4-ecc67f4913b9": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 70,
+                    "y": 150
+                },
+                "z": 1,
+                "embeds": [],
+                "dependson": [
+                    "e466f55d-1afe-43a6-9073-167ae9bf4256"
+                ]
+            },
+            "8afcf149-5fed-4d8d-a4bf-ab0b25777d56": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 70,
+                    "y": 60
+                },
+                "z": 1,
+                "embeds": [],
+                "dependson": [
+                    "d8567df0-6cc3-4bd2-ae9e-f0d8e56cdf40"
+                ]
+            },
+            "86bc60b4-7dfb-430f-93fb-89db1d18babc": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 70,
+                    "y": 240
+                },
+                "z": 1,
+                "embeds": [],
+                "dependson": [
+                    "f380b75e-48c7-4fb7-b82b-467c154a5cdf"
+                ]
+            },
+            "d78d4582-624a-474c-a136-2c4a0ff72765": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 440,
+                    "y": 60
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "d8567df0-6cc3-4bd2-ae9e-f0d8e56cdf40"
+                ]
+            },
+            "e0aea3c9-48ce-44d7-ab31-cd38d808b9dd": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 430,
+                    "y": 150
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "e466f55d-1afe-43a6-9073-167ae9bf4256"
+                ]
+            },
+            "e6e48e6a-5917-454e-8227-413e998a579a": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 430,
+                    "y": 240
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "f380b75e-48c7-4fb7-b82b-467c154a5cdf"
+                ]
+            },
+            "c7d872bf-66b2-4470-885f-d12e6a78dda2": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 280,
+                    "y": 350
+                },
+                "z": 0,
+                "embeds": []
+            }
+        }
+    },
+    "Resources": {
+        "deactivateRule": {
+            "Type": "AWS::IoT::TopicRule",
+            "Properties": {
+                "RuleName": {
+                    "Ref": "DetachName"
+                },
+                "TopicRulePayload": {
+                    "Sql": "SELECT * as response, principal() as principal,clientid() as clientId FROM 'certificate/rotation/detach/#'",
+                    "AwsIotSqlVersion": "2016-03-23",
+                    "RuleDisabled": false,
+                    "Actions": [
+                        {
+                            "Lambda": {
+                                "FunctionArn": {
+                                    "Fn::Sub": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${DetachFnName}"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "86bc60b4-7dfb-430f-93fb-89db1d18babc"
+                }
+            },
+            "DependsOn": [
+                "deactivateFn"
+            ]
+        },
+        "attachRule": {
+            "Type": "AWS::IoT::TopicRule",
+            "Properties": {
+                "RuleName": {
+                    "Ref": "AttachName"
+                },
+                "TopicRulePayload": {
+                    "Sql": "SELECT * as response, principal() as principal,clientid() as clientId FROM 'certificate/rotation/attach/#'",
+                    "AwsIotSqlVersion": "2016-03-23",
+                    "RuleDisabled": false,
+                    "Actions": [
+                        {
+                            "Lambda": {
+                                "FunctionArn": {
+                                    "Fn::Sub": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AttachFnName}"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "8afcf149-5fed-4d8d-a4bf-ab0b25777d56"
+                }
+            },
+            "DependsOn": [
+                "attachFn"
+            ]
+        },
+        "activateRule": {
+            "Type": "AWS::IoT::TopicRule",
+            "Properties": {
+                "RuleName": {
+                    "Ref": "ActivateName"
+                },
+                "TopicRulePayload": {
+                    "Sql": "SELECT * as response, clientid() as clientId FROM 'certificate/rotation/activate/#'",
+                    "AwsIotSqlVersion": "2016-03-23",
+                    "RuleDisabled": false,
+                    "Actions": [
+                        {
+                            "Lambda": {
+                                "FunctionArn": {
+                                    "Fn::Sub": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ActivateFnName}"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "4857fd22-1b72-4dec-83e4-ecc67f4913b9"
+                }
+            },
+            "DependsOn": [
+                "activateFn"
+            ]
+        },
+        "attachFn": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {
+                        "Fn::Sub": "${S3BucketName}"
+                    },
+                    "S3Key": {
+                        "Fn::Sub": "${attachFnZip}"
+                    }
+                },
+                "FunctionName": {
+                    "Ref": "AttachFnName"
+                },
+                "MemorySize": 128,
+                "Handler": "attach_function_csr.create_and_attach",
+                "Role": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/${rotateRole}"
+                },
+                "Timeout": 5,
+                "Runtime": "python3.6",
+                "Description": "Create and attach function for certificate rotation"
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "d8567df0-6cc3-4bd2-ae9e-f0d8e56cdf40"
+                }
+            }
+        },
+        "deactivateFn": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {
+                        "Fn::Sub": "${S3BucketName}"
+                    },
+                    "S3Key": {
+                        "Fn::Sub": "${detachFnZip}"
+                    }
+                },
+                "FunctionName": {
+                    "Ref": "DetachFnName"
+                },
+                "MemorySize": 128,
+                "Handler": "detach_function.deactivate_certificate",
+                "Role": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/${rotateRole}"
+                },
+                "Timeout": 5,
+                "Runtime": "python3.7",
+                "Description": "Sets the old certificate as inactive"
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "f380b75e-48c7-4fb7-b82b-467c154a5cdf"
+                }
+            }
+        },
+        "activateFn": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {
+                        "Fn::Sub": "${S3BucketName}"
+                    },
+                    "S3Key": {
+                        "Fn::Sub": "${activateFnZip}"
+                    }
+                },
+                "FunctionName": {
+                    "Ref": "ActivateFnName"
+                },
+                "MemorySize": 128,
+                "Handler": "activate_function.activate",
+                "Role": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/${rotateRole}"
+                },
+                "Timeout": 5,
+                "Runtime": "python3.7",
+                "Description": "Activates the newly created certificate"
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "e466f55d-1afe-43a6-9073-167ae9bf4256"
+                }
+            }
+        },
+        "attachPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "attachFn",
+                        "Arn"
+                    ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "iot.amazonaws.com",
+                "SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                },
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "attachRule",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "d78d4582-624a-474c-a136-2c4a0ff72765"
+                }
+            }
+        },
+        "activatePermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "activateFn",
+                        "Arn"
+                    ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "iot.amazonaws.com",
+                "SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                },
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "activateRule",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "e0aea3c9-48ce-44d7-ab31-cd38d808b9dd"
+                }
+            }
+        },
+        "deactivatePermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "deactivateFn",
+                        "Arn"
+                    ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "iot.amazonaws.com",
+                "SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                },
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "deactivateRule",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "e6e48e6a-5917-454e-8227-413e998a579a"
+                }
+            }
+        },
+        "rotateRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": {
+                    "Ref": "RoleName"
+                },
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "rotatePolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "iot:Publish",
+                                    "Resource": [
+                                        {
+                                            "Fn::Sub": "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/certificate/rotation/result/*"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "iot:AttachPolicy",
+                                        "lambda:InvokeFunction",
+                                        "iot:AttachThingPrincipal",
+                                        "iot:Connect",
+                                        "iot:DescribeCertificate",
+                                        "iot:ListAttachedPolicies",
+                                        "logs:CreateLogGroup",
+                                        "logs:PutLogEvents",
+                                        "logs:CreateLogStream",
+                                        "iot:ListPrincipalThings",
+                                        "iot:UpdateCertificate",
+                                        "iot:CreateKeysAndCertificate",
+                                        "iot:CreateCertificateFromCsr"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "c7d872bf-66b2-4470-885f-d12e6a78dda2"
+                }
+            }
+        }
+    }
+}
